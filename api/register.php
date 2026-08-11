@@ -41,8 +41,8 @@ try {
     // Criptografar senha
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-    // ✅ INSERIR CORRIGIDO (coluna "password" e sem avatar_url)
-    $stmt = $pdo->prepare("INSERT INTO users (name, email, password, church, role, created_at) VALUES (?, ?, ?, ?, 'user', NOW())");
+    // ✅ LINHA CORRIGIDA: password_hash em vez de password!
+    $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, church, role, created_at) VALUES (?, ?, ?, ?, 'user', NOW())");
     $stmt->execute([$name, $email, $password_hash, $church]);
 
     $userId = $pdo->lastInsertId();
