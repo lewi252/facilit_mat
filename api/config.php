@@ -10,27 +10,42 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
     exit();
 }
 
-$db_host = getenv('PGHOST');
-$db_port = getenv('PGPORT') ?: "5432";
-$db_name = getenv('PGDATABASE');
-$db_user = getenv('PGUSER');
-$db_pass = getenv('PGPASSWORD');
-$endpoint_id = getenv('PGENDPOINTID'); // opcional — só usado se definido
+// Tenta primeiro DATABASE_URL (mais simples e menos sujeito a erro)
+// Se não tiver, monta a partir das variáveis separadas PGHOST, PGUSER, etc.
+$database_url = getenv('DATABASE_URL');
 
-if (!$db_host || !$db_name || !$db_user || !$db_pass) {
-    http_response_code(500);
-    die(json_encode(["success" => false, "message" => "Erro de configuração: variáveis de ambiente do banco de dados não encontradas."]));
+if ($database_url) {
+    // Usa a URL completa diretamente
+    $dsn_parts = parse_url($database_url);
+    $db_host = $dsn_parts['host'];
+    $db_port = isset($dsn_parts['port']) ? $dsn_parts['port'] : 5432;
+    $db_name = ltrim($dsn_parts['path'], '/');
+    $db_user = $dsn_parts['user'];
+    $db_pass = $dsn_parts['pass'];
+
+    // Extrai query params (ex: sslmode=require)
+    $query = isset($dsn_parts['query']) ? $dsn_parts['query'] : 'sslmode=require';
+    parse_str($query, $query_params);
+    $sslmode = isset($query_params['sslmode']) ? $query_params['sslmode'] : 'require';
+
+    $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=$sslmode";
+} else {
+    // Fallback: variáveis separadas
+    $db_host = getenv('PGHOST');
+    $db_port = getenv('PGPORT') ?: '5432';
+    $db_name = getenv('PGDATABASE');
+    $db_user = getenv('PGUSER');
+    $db_pass = getenv('PGPASSWORD');
+
+    if (!$db_host || !$db_name || !$db_user || !$db_pass) {
+        http_response_code(500);
+        die(json_encode(["success" => false, "message" => "Erro de configuração: variáveis de ambiente do banco não encontradas."]));
+    }
+
+    $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require";
 }
 
 try {
-    // Monta o DSN com ou sem endpoint_id (o endpoint_id é exigido pelo Neon
-    // apenas quando o host não contém o ID embutido — ex: hosts legados)
-    if ($endpoint_id) {
-        $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require;options='endpoint=$endpoint_id'";
-    } else {
-        $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require";
-    }
-
     $options = [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
