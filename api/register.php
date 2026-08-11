@@ -3,13 +3,13 @@ require_once "config.php";
 
 header("Content-Type: application/json");
 
-// Pegar dados
+// Pegar dados (POST ou JSON)
 $name = isset($_POST['name']) ? trim($_POST['name']) : '';
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 $password = isset($_POST['password']) ? trim($_POST['password']) : '';
 $church = isset($_POST['church']) ? trim($_POST['church']) : null;
 
-// Aceitar JSON também
+// Ler JSON se vier por raw input
 if (empty($name) || empty($email)) {
     $rawInput = file_get_contents('php://input');
     $data = json_decode($rawInput, true);
@@ -43,7 +43,7 @@ try {
     // Criptografar senha
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-    // ✅ APENAS as colunas OBRIGATÓRIAS! O resto o banco preenche sozinho!
+    // ✅ ORDEM CERTA: name, email, password_hash, church
     if ($church) {
         $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, church) VALUES (?, ?, ?, ?)");
         $stmt->execute([$name, $email, $password_hash, $church]);
