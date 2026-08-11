@@ -19,7 +19,7 @@ let appState = {
   isPhpBackendAvailable: false
 };
 
-const API_BASE = "api";
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'api' : 'https://facilit-mat.onrender.com/api';
 let tempProfileAvatarDataUrl = null;
 let ytPlayer = null;
 
