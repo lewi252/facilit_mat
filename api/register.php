@@ -7,7 +7,7 @@ header("Content-Type: application/json");
 $name = isset($_POST['name']) ? trim($_POST['name']) : '';
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 $password = isset($_POST['password']) ? trim($_POST['password']) : '';
-$church = isset($_POST['church']) ? trim($_POST['church']) : 'Comunidade Cristã';
+$church = isset($_POST['church']) ? trim($_POST['church']) : null;
 
 // Aceitar JSON também
 if (empty($name) || empty($email)) {
@@ -17,48 +17,53 @@ if (empty($name) || empty($email)) {
         $name = isset($data['name']) ? trim($data['name']) : '';
         $email = isset($data['email']) ? trim($data['email']) : '';
         $password = isset($data['password']) ? trim($data['password']) : '';
-        $church = isset($data['church']) ? trim($data['church']) : 'Comunidade Cristã';
+        $church = isset($data['church']) ? trim($data['church']) : null;
     }
 }
 
-// Validar
+// Validar campos obrigatórios
 if (empty($name) || empty($email) || empty($password)) {
     http_response_code(400);
-    echo json_encode(["success" => false, "message" => "Preencha todos os campos!"]);
+    echo json_encode(["success" => false, "message" => "Preencha Nome, E-mail e Senha!"]);
     exit;
 }
 
 $email = strtolower($email);
 
 try {
-    // Verificar se e-mail existe
+    // Verificar se e-mail já existe
     $stmt = $pdo->prepare("SELECT id FROM users WHERE LOWER(email) = LOWER(?)");
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
         http_response_code(409);
-        echo json_encode(["success" => false, "message" => "E-mail já cadastrado!"]);
+        echo json_encode(["success" => false, "message" => "Este e-mail já está cadastrado!"]);
         exit;
     }
 
     // Criptografar senha
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-    // ✅ COLUNAS CORRETAS conforme tabela do Neon!
-    $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, church, created_at) VALUES (?, ?, ?, ?, NOW())");
-    $stmt->execute([$name, $email, $password_hash, $church]);
+    // ✅ APENAS as colunas OBRIGATÓRIAS! O resto o banco preenche sozinho!
+    if ($church) {
+        $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, church) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$name, $email, $password_hash, $church]);
+    } else {
+        $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)");
+        $stmt->execute([$name, $email, $password_hash]);
+    }
 
     $userId = $pdo->lastInsertId();
 
     echo json_encode([
         "success" => true,
-        "message" => "✅ Cadastro REALIZADO com SUCESSO!",
-        "usuario_id" => $userId
+        "message" => "✅ CADASTRO FEITO COM SUCESSO! Olha lá no Neon!",
+        "id" => $userId
     ]);
 
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
         "success" => false,
-        "message" => "❌ ERRO DO BANCO: " . $e->getMessage()
+        "message" => "❌ ERRO: " . $e->getMessage()
     ]);
 }
