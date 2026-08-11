@@ -1099,8 +1099,9 @@ async function saveUserProfile() {
     formData.append("name", name);
     formData.append("church", church);
 
-    if (avatarFileInput && avatarFileInput.files.length > 0) {
-      formData.append("avatar_file", avatarFileInput.files[0]);
+    // Envia a foto como Base64 para salvar direto no banco (Render não tem disco persistente)
+    if (tempProfileAvatarDataUrl) {
+      formData.append("avatar_base64", tempProfileAvatarDataUrl);
     }
 
     try {
