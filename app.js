@@ -1188,28 +1188,11 @@ async function handleUserRegister(e) {
         return;
       }
     } catch (err) {
-      console.warn("Erro ao conectar à API do Render no cadastro:", err);
+      console.error("Erro ao conectar à API do Render no cadastro:", err);
+      alert("Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.");
+      return;
     }
   }
-
-  const existing = appState.registeredUsers.find(u => u.email.toLowerCase() === email);
-  if (existing) {
-    alert("Este e-mail já está cadastrado! Por favor, faça login com a sua senha.");
-    return;
-  }
-
-  const localUser = { 
-    id: Date.now(), 
-    name, 
-    email, 
-    password,
-    church: church || "Comunidade Cristã",
-    avatar_url: avatarDataUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150"
-  };
-
-  appState.registeredUsers.push(localUser);
-  saveRegisteredUsersLocal();
-  finishUserLogin(localUser);
 }
 
 async function handleUserLogin(e) {

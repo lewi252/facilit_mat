@@ -1,23 +1,21 @@
 <?php
 require_once "config.php";
 
-header("Content-Type: application/json");
-
-// Pegar dados (POST ou JSON)
-$name = isset($_POST['name']) ? trim($_POST['name']) : '';
-$email = isset($_POST['email']) ? trim($_POST['email']) : '';
+// Pegar dados (POST multipart/form-data ou JSON)
+$name     = isset($_POST['name'])     ? trim($_POST['name'])     : '';
+$email    = isset($_POST['email'])    ? trim($_POST['email'])    : '';
 $password = isset($_POST['password']) ? trim($_POST['password']) : '';
-$church = isset($_POST['church']) ? trim($_POST['church']) : null;
+$church   = isset($_POST['church'])   ? trim($_POST['church'])   : null;
 
 // Ler JSON se vier por raw input
 if (empty($name) || empty($email)) {
     $rawInput = file_get_contents('php://input');
     $data = json_decode($rawInput, true);
     if ($data) {
-        $name = isset($data['name']) ? trim($data['name']) : '';
-        $email = isset($data['email']) ? trim($data['email']) : '';
+        $name     = isset($data['name'])     ? trim($data['name'])     : '';
+        $email    = isset($data['email'])    ? trim($data['email'])    : '';
         $password = isset($data['password']) ? trim($data['password']) : '';
-        $church = isset($data['church']) ? trim($data['church']) : null;
+        $church   = isset($data['church'])   ? trim($data['church'])   : null;
     }
 }
 
@@ -28,7 +26,8 @@ if (empty($name) || empty($email) || empty($password)) {
     exit;
 }
 
-$email = strtolower($email);
+$email  = strtolower($email);
+$church = (!$church || $church === '') ? 'Comunidade Cristã' : $church;
 
 try {
     // Verificar se e-mail já existe
@@ -43,27 +42,27 @@ try {
     // Criptografar senha
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-    // ✅ ORDEM CERTA: name, email, password_hash, church
-    if ($church) {
-        $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, church) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$name, $email, $password_hash, $church]);
-    } else {
-        $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)");
-        $stmt->execute([$name, $email, $password_hash]);
-    }
+    // Inserir usuário
+    $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, church) VALUES (?, ?, ?, ?)");
+    $stmt->execute([$name, $email, $password_hash, $church]);
 
     $userId = $pdo->lastInsertId();
 
+    // Buscar o usuário recém-criado para retornar completo
+    $stmt = $pdo->prepare("SELECT id, name, email, church, avatar_url, role FROM users WHERE id = ?");
+    $stmt->execute([$userId]);
+    $newUser = $stmt->fetch();
+
     echo json_encode([
         "success" => true,
-        "message" => "✅ CADASTRO FEITO COM SUCESSO! Olha lá no Neon!",
-        "id" => $userId
+        "message" => "Cadastro realizado com sucesso!",
+        "user"    => $newUser
     ]);
 
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
         "success" => false,
-        "message" => "❌ ERRO: " . $e->getMessage()
+        "message" => "Erro ao cadastrar: " . $e->getMessage()
     ]);
 }

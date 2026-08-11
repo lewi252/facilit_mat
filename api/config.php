@@ -10,25 +10,31 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
     exit();
 }
 
-// ✅ FORÇA o uso das variáveis de ambiente do Render
 $db_host = getenv('PGHOST');
 $db_port = getenv('PGPORT') ?: "5432";
 $db_name = getenv('PGDATABASE');
 $db_user = getenv('PGUSER');
 $db_pass = getenv('PGPASSWORD');
-$endpoint_id = getenv('PGENDPOINTID');
+$endpoint_id = getenv('PGENDPOINTID'); // opcional — só usado se definido
 
-// ⚠️ Se NÃO encontrar variável → MOSTRA O ERRO!
 if (!$db_host || !$db_name || !$db_user || !$db_pass) {
-    die("❌ ERRO: Variáveis de ambiente não encontradas!");
+    http_response_code(500);
+    die(json_encode(["success" => false, "message" => "Erro de configuração: variáveis de ambiente do banco de dados não encontradas."]));
 }
 
 try {
-    $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require;options='endpoint=$endpoint_id'";
+    // Monta o DSN com ou sem endpoint_id (o endpoint_id é exigido pelo Neon
+    // apenas quando o host não contém o ID embutido — ex: hosts legados)
+    if ($endpoint_id) {
+        $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require;options='endpoint=$endpoint_id'";
+    } else {
+        $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require";
+    }
+
     $options = [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES => false
+        PDO::ATTR_EMULATE_PREPARES   => false,
     ];
 
     $pdo = new PDO($dsn, $db_user, $db_pass, $options);
@@ -37,7 +43,7 @@ try {
     http_response_code(500);
     echo json_encode([
         "success" => false,
-        "message" => "Erro de Conexão com o Banco Neon (PostgreSQL): " . $e->getMessage()
+        "message" => "Erro de conexão com o banco de dados: " . $e->getMessage()
     ]);
     exit();
 }
