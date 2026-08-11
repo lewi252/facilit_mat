@@ -10,12 +10,18 @@ if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS
     exit();
 }
 
-$db_host = getenv('PGHOST') ?: "ep-spring-bonus-acruuu8p.sa-east-1.aws.neon.tech";
+// ✅ FORÇA o uso das variáveis de ambiente do Render
+$db_host = getenv('PGHOST');
 $db_port = getenv('PGPORT') ?: "5432";
-$db_name = getenv('PGDATABASE') ?: "neondb";
-$db_user = getenv('PGUSER') ?: "neondb_owner";
-$db_pass = getenv('PGPASSWORD') ?: "npg_DwPG6d4Znval";
-$endpoint_id = getenv('PGENDPOINT') ?: "ep-spring-bonus-acruuu8p";
+$db_name = getenv('PGDATABASE');
+$db_user = getenv('PGUSER');
+$db_pass = getenv('PGPASSWORD');
+$endpoint_id = getenv('PGENDPOINTID');
+
+// ⚠️ Se NÃO encontrar variável → MOSTRA O ERRO!
+if (!$db_host || !$db_name || !$db_user || !$db_pass) {
+    die("❌ ERRO: Variáveis de ambiente não encontradas!");
+}
 
 try {
     $dsn = "pgsql:host=$db_host;port=$db_port;dbname=$db_name;sslmode=require;options='endpoint=$endpoint_id'";
