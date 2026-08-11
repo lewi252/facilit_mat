@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tempo Com Jesus - Plataforma de Vídeos e Pregações Cristãs</title>
+    <meta name="description" content="Time Com Jesus é a plataforma cristã de vídeos, pregações, estudos bíblicos, louvores e testemunhos. Assista e compartilhe conteúdos edificantes.">
+    
+    <!-- Bootstrap CSS (CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons (CDN) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Estilos Customizados Time Com Jesus -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Header / Navbar Time Com Jesus -->
+    <nav class="tcj-navbar">
+        <div class="container-fluid px-lg-5">
+            <div class="d-flex align-items-center justify-content-between gap-3">
+                
+                <!-- Logo -->
+                <a href="#" class="tcj-logo">
+                    <img src="logo.png" alt="Time Com Jesus Logo" class="tcj-logo-img">
+                    <div class="tcj-logo-text brand-font d-none d-sm-inline">
+                        Time Com <span>Jesus</span>
+                    </div>
+                </a>
+
+                <!-- Barra de Busca -->
+                <div class="search-container d-none d-md-block">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Buscar pregações, pregadores, igrejas...">
+                </div>
+
+                <!-- Ações e Perfil -->
+                <div class="d-flex align-items-center gap-2">
+                    <!-- Botão de Importar/Enviar Pregação -->
+                    <button class="btn btn-gold" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        <span class="d-none d-sm-inline">Enviar Pregação</span>
+                    </button>
+
+                    <!-- Botão Admin -->
+                    <button id="adminNavBtn" class="btn btn-admin" onclick="promptAdminPassword()">
+                        <i class="bi bi-shield-lock me-1"></i>
+                        <span class="d-none d-md-inline">Admin</span>
+                    </button>
+
+                    <!-- Área de Perfil / Login -->
+                    <div id="userNavArea">
+                        <button class="btn btn-outline-light-custom" onclick="openAuthModal()">
+                            <i class="bi bi-person me-1"></i> Entrar
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Busca Mobile -->
+            <div class="mt-2 d-md-none">
+                <div class="search-container">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Buscar pregações..." oninput="appState.searchQuery = this.value; renderVideoGrid();">
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container-fluid px-lg-5 py-4">
+        
+        <!-- Categorias Bar -->
+        <div id="categoriesContainer" class="categories-bar mb-4"></div>
+
+        <!-- Banner Pregação em Destaque (Hero) -->
+        <div id="featuredBannerContainer"></div>
+
+        <!-- Seção Principal de Vídeos -->
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h4 mb-0 brand-font text-white">
+                <i class="bi bi-play-btn-fill text-warning me-2"></i> Pregações & Mensagens Recentes
+            </h2>
+            <small class="text-muted">Vídeos edificantes salvos na plataforma</small>
+        </div>
+
+        <!-- Grid de Vídeos -->
+        <div id="videoGrid" class="video-grid"></div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-4 border-top border-secondary border-opacity-25 bg-dark">
+        <div class="container-fluid px-lg-5 text-center text-md-start">
+            <div class="row align-items-center gy-3">
+                <div class="col-md-6">
+                    <div class="tcj-logo justify-content-center justify-content-md-start mb-2">
+                        <img src="logo.png" alt="Time Com Jesus Logo" class="tcj-logo-img-footer">
+                        <span class="tcj-logo-text fs-5 brand-font">Time Com <span>Jesus</span></span>
+                    </div>
+                    <p class="text-secondary small mb-0">Plataforma dedicada a espalhar a palavra de Deus através de pregações, estudos e testemunhos edificantes.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end text-secondary small">
+                    <p class="mb-0">&copy; 2026 Time Com Jesus. Todos os direitos reservados.</p>
+                    <p class="mb-0 text-warning"><i class="bi bi-heart-fill me-1"></i> "Ide por todo o mundo e pregai o evangelho a toda criatura." (Marcos 16:15)</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: Player de Vídeo -->
+    <div class="modal fade" id="playerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title brand-font" id="playerModalTitle">Pregação</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-4">
+                        <!-- Player Principal -->
+                        <div class="col-lg-8">
+                            <div id="playerContainer" class="player-container mb-3"></div>
+                            <div id="playerDetails"></div>
+                        </div>
+
+                        <!-- Sidebar de Fila de Reprodução & Próximo Vídeo -->
+                        <div class="col-lg-4">
+                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                <h6 class="text-warning brand-font mb-0"><i class="bi bi-list-task me-1"></i> Fila de Reprodução</h6>
+                                <div class="form-check form-switch m-0" title="Avançar para a próxima pregação automaticamente quando o vídeo terminar">
+                                  <input class="form-check-input bg-warning border-0" type="checkbox" id="autoPlayNextSwitch" checked onchange="toggleAutoPlayNext(this.checked)">
+                                  <label class="form-check-label text-white small" for="autoPlayNextSwitch">Auto-Avançar</label>
+                                </div>
+                            </div>
+
+                            <!-- Lista Interativa da Fila -->
+                            <div class="queue-container mb-3" id="playerQueueContainer">
+                                <p class="text-muted small mb-0">Nenhuma pregação na fila.</p>
+                            </div>
+
+                            <!-- Seletor Rápido: Adicionar Pregação à Fila -->
+                            <div class="p-3 bg-dark rounded border border-secondary border-opacity-25">
+                                <h6 class="text-white small fw-bold mb-2"><i class="bi bi-plus-circle-fill text-warning me-1"></i> Escolher Próxima Pregação</h6>
+                                <div class="input-group input-group-sm mb-2">
+                                    <select id="addToQueueSelect" class="form-select form-dark">
+                                        <option value="">Selecione uma pregação/louvor...</option>
+                                    </select>
+                                    <button class="btn btn-gold btn-sm" onclick="addSelectedToQueue()"><i class="bi bi-plus-lg"></i> Adicionar</button>
+                                </div>
+                                <small class="text-secondary" style="font-size: 0.75rem;">Adicione pregações ou louvores para ouvir em seguida na ordem que desejar.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Importar / Enviar Pregação -->
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title brand-font text-warning"><i class="bi bi-cloud-upload-fill me-2"></i> Importar / Enviar Pregação</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="uploadVideoForm" onsubmit="event.preventDefault(); saveNewVideo();">
+                        
+                        <!-- Opção de Upload de Arquivo Local ou Link -->
+                        <div class="mb-4">
+                            <label class="form-label text-white fw-bold mb-2">1. Origem do Vídeo</label>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="dropzone-box" onclick="document.getElementById('localVideoFile').click()">
+                                        <i class="bi bi-file-earmark-play-fill display-5 text-warning mb-2"></i>
+                                        <h6 class="text-white mb-1">Selecionar Vídeo do Computador</h6>
+                                        <p class="text-muted small mb-0">Importe arquivos MP4, WebM ou MOV</p>
+                                        <input type="file" id="localVideoFile" accept="video/*" class="d-none" onchange="handleLocalVideoSelect(event)">
+                                    </div>
+                                    <div id="uploadFileStatus" class="mt-2 small"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="uploadLink" class="form-label text-muted small">Ou cole um Link (YouTube / MP4 Web)</label>
+                                    <input type="url" id="uploadLink" class="form-control form-dark" placeholder="https://www.youtube.com/watch?v=...">
+                                    <small class="text-secondary d-block mt-1">Ex: Link direto do YouTube ou arquivo MP4 online.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalhes do Vídeo -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label for="uploadTitle" class="form-label text-white fw-bold">Título da Pregação / Louvor  *</label>
+                                <input type="text" id="uploadTitle" class="form-control form-dark" placeholder="Ex: O Poder da Fé que Remove Montanhas" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="uploadCategory" class="form-label text-white fw-bold">Categoria</label>
+                                <select id="uploadCategory" class="form-select form-dark">
+                                    <option value="Pregações">Pregações</option>
+                                    <option value="Estudos Bíblicos">Estudos Bíblicos</option>
+                                    <option value="Louvor & Adoração">Louvor & Adoração</option>
+                                    <option value="Testemunhos">Testemunhos</option>
+                                    <option value="Jovens">Jovens</option>
+                                    <option value="Infantil">Infantil</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="uploadPreacher" class="form-label text-white fw-bold">Nome do Preletor / Pastor / Cantor *</label>
+                                <input type="text" id="uploadPreacher" class="form-control form-dark" placeholder="Ex: Pr. Paulo Silva ou Gabriela Rocha" required>
+                                <small class="text-secondary">Digite o nome do pregador ou cantor do vídeo.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="uploadChurch" class="form-label text-white fw-bold">Igreja / Ministério</label>
+                                <input type="text" id="uploadChurch" class="form-control form-dark" placeholder="Ex: Igreja Evangélica Vida Nova">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="uploadThumbFile" class="form-label text-white fw-bold">Upload da Capa (Imagem de Thumbnail)</label>
+                            <input type="file" id="uploadThumbFile" accept="image/*" class="form-control form-dark">
+                            <small class="text-secondary">Selecione uma foto/imagem de capa no seu computador. Sua foto de perfil será usada automaticamente como a foto do autor!</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="uploadDescription" class="form-label text-white fw-bold">Descrição da Mensagem</label>
+                            <textarea id="uploadDescription" class="form-control form-dark" rows="3" placeholder="Escreva um resumo ou pontos principais da pregação..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-outline-light-custom" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-gold py-2 px-4">
+                                <i class="bi bi-check-lg me-1"></i> Publicar no Time Com Jesus
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDIÇÃO DE PREGAÇÃO (Apenas Vídeos Próprios ou Admin) -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title brand-font text-warning"><i class="bi bi-pencil-square me-2"></i> Editar Minha Pregação / Louvor</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="editVideoForm" onsubmit="event.preventDefault(); submitEditVideo();">
+                        <input type="hidden" id="editVideoId">
+                        
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label for="editTitle" class="form-label text-white fw-bold">Título da Pregação / Louvor *</label>
+                                <input type="text" id="editTitle" class="form-control form-dark" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="editCategory" class="form-label text-white fw-bold">Categoria</label>
+                                <select id="editCategory" class="form-select form-dark">
+                                    <option value="Pregações">Pregações</option>
+                                    <option value="Estudos Bíblicos">Estudos Bíblicos</option>
+                                    <option value="Louvor & Adoração">Louvor & Adoração</option>
+                                    <option value="Testemunhos">Testemunhos</option>
+                                    <option value="Jovens">Jovens</option>
+                                    <option value="Infantil">Infantil</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label for="editPreacher" class="form-label text-white fw-bold">Nome do Preletor / Cantor *</label>
+                                <input type="text" id="editPreacher" class="form-control form-dark" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editChurch" class="form-label text-white fw-bold">Igreja / Ministério</label>
+                                <input type="text" id="editChurch" class="form-control form-dark">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editThumb" class="form-label text-white fw-bold">Link da Imagem de Capa (Thumbnail)</label>
+                            <input type="url" id="editThumb" class="form-control form-dark" placeholder="https://exemplo.com/imagem-capa.jpg">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editVideoLink" class="form-label text-white fw-bold">Link do Vídeo (YouTube ou MP4 Web)</label>
+                            <input type="url" id="editVideoLink" class="form-control form-dark" placeholder="https://www.youtube.com/watch?v=...">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="editDescription" class="form-label text-white fw-bold">Descrição da Mensagem</label>
+                            <textarea id="editDescription" class="form-control form-dark" rows="3"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-outline-light-custom" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-gold py-2 px-4">
+                                <i class="bi bi-save me-1"></i> Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Desafio de Senha do Admin -->
+    <div class="modal fade" id="adminPassModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content modal-content-dark text-center p-3">
+                <div class="modal-header modal-header-dark justify-content-center border-0">
+                    <h5 class="modal-title brand-font text-danger">
+                        <i class="bi bi-shield-lock-fill fs-2 d-block mb-1"></i> Acesso Restrito Admin
+                    </h5>
+                </div>
+                <div class="modal-body py-2">
+                    <p class="text-secondary small mb-3">Digite a senha de Administrador para acessar o painel de moderação.</p>
+                    <form onsubmit="event.preventDefault(); verifyAdminPassword();">
+                        <input type="password" id="adminPasswordInput" class="form-control form-dark text-center mb-3" placeholder="Senha do Admin" required>
+                        <button type="submit" class="btn btn-danger w-100 fw-bold py-2">Entrar como Admin</button>
+                    </form>
+                    <small class="text-muted d-block mt-2" style="font-size: 0.75rem;"><code>Acesso apenas pra ADMIN</code>)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Painel do Administrador -->
+    <div class="modal fade" id="adminDashboardModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark d-flex justify-content-between align-items-center">
+                    <h5 class="modal-title brand-font text-warning">
+                        <i class="bi bi-shield-check me-2"></i> Painel de Administração - Time Com Jesus
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-sm btn-outline-danger" onclick="logoutAdmin()"><i class="bi bi-box-arrow-right me-1"></i> Sair do Admin</button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Abas do Admin -->
+                    <ul class="nav nav-pills nav-justified mb-4" id="adminTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active bg-dark border border-warning text-warning fw-bold" id="adminVideosTab" data-bs-toggle="tab" data-bs-target="#adminVideosPane" type="button" onclick="renderAdminTable()">
+                                <i class="bi bi-collection-play-fill me-1"></i> Pregações & Louvores
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link bg-dark border border-secondary text-white fw-bold" id="adminUsersTab" data-bs-toggle="tab" data-bs-target="#adminUsersPane" type="button" onclick="renderAdminUsersTable()">
+                                <i class="bi bi-people-fill me-1"></i> Contas de Usuários (E-mails & Senhas)
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="adminTabsContent">
+                        <!-- Pane 1: Pregações -->
+                        <div class="tab-pane fade show active" id="adminVideosPane">
+                            <div class="table-responsive">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Título</th>
+                                            <th>Pregador</th>
+                                            <th>Categoria</th>
+                                            <th>Visualizações</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminTableBody">
+                                        <!-- Preenchido dinamicamente via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Pane 2: Contas de Usuários -->
+                        <div class="tab-pane fade" id="adminUsersPane">
+                            <div class="alert alert-dark border-secondary text-secondary small mb-3">
+                                <i class="bi bi-shield-lock-fill text-warning me-1"></i> Lista de usuários registrados com acesso de Administrador aos e-mails e senhas de acesso.
+                            </div>
+                            <div class="table-responsive">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Foto & Nome</th>
+                                            <th>E-mail</th>
+                                            <th>Senha Registrada</th>
+                                            <th>Igreja</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminUsersTableBody">
+                                        <!-- Preenchido dinamicamente via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Login / Cadastro de Usuários -->
+    <div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title brand-font text-warning"><i class="bi bi-person-fill me-2"></i> Entrar / Criar Conta</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Abas -->
+                    <ul class="nav nav-pills nav-justified mb-3" id="authTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active bg-secondary bg-opacity-25 text-white" id="login-tab" data-bs-toggle="tab" data-bs-target="#loginTabContent" type="button">Entrar</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link bg-secondary bg-opacity-25 text-white" id="register-tab" data-bs-toggle="tab" data-bs-target="#registerTabContent" type="button">Cadastrar</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="authTabsContent">
+                        <!-- Aba Login -->
+                        <div class="tab-pane fade show active" id="loginTabContent">
+                            <form onsubmit="handleUserLogin(event)">
+                                <div class="mb-3">
+                                    <label class="form-label text-white">E-mail</label>
+                                    <input type="email" id="loginEmail" class="form-control form-dark" placeholder="seuemail@exemplo.com" required>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label text-white">Senha</label>
+                                    <input type="password" id="loginPass" class="form-control form-dark" placeholder="••••••••" required>
+                                </div>
+                                <div class="text-end mb-4">
+                                    <a href="#" class="text-warning small text-decoration-none" onclick="openResetPassModal()"><i class="bi bi-key me-1"></i> Esqueci minha senha</a>
+                                </div>
+                                <button type="submit" class="btn btn-gold w-100 py-2">Entrar na Conta</button>
+                            </form>
+                        </div>
+
+                        <!-- Aba Cadastro -->
+                        <div class="tab-pane fade" id="registerTabContent">
+                            <form onsubmit="handleUserRegister(event)">
+                                <div class="mb-3">
+                                    <label class="form-label text-white">Nome Completo / Pregador</label>
+                                    <input type="text" id="regName" class="form-control form-dark" placeholder="Ex: Pr. Mateus Santos" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-white">E-mail</label>
+                                    <input type="email" id="regEmail" class="form-control form-dark" placeholder="seuemail@exemplo.com" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-white">Nome da Sua Igreja / Ministério</label>
+                                    <input type="text" id="regChurch" class="form-control form-dark" placeholder="Ex: Comunidade Evangélica">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label text-white">Foto de Perfil (Selecionar Imagem)</label>
+                                    <input type="file" id="regAvatarFile" accept="image/*" class="form-control form-dark">
+                                    <small class="text-secondary">Selecione uma foto no seu computador para o seu perfil.</small>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label text-white">Senha</label>
+                                    <input type="password" id="regPass" class="form-control form-dark" placeholder="••••••••" required>
+                                </div>
+                                <button type="submit" class="btn btn-gold w-100 py-2">Criar Minha Conta</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE MEU PERFIL (Mudar Foto, Nome e Igreja via Upload) -->
+    <div class="modal fade" id="profileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title brand-font text-warning"><i class="bi bi-person-badge-fill me-2"></i> Meu Perfil</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form onsubmit="event.preventDefault(); saveUserProfile();">
+                        <div class="text-center mb-4">
+                            <img id="profileAvatarPreview" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150" class="rounded-circle border border-2 border-warning shadow-lg mb-2" style="width: 90px; height: 90px; object-fit: cover;">
+                            <h6 class="text-white mb-0" id="profileNameDisplay">Meu Nome</h6>
+                            <small class="text-secondary" id="profileEmailDisplay">email@exemplo.com</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="profileName" class="form-label text-white fw-bold">Seu Nome / Nome de Pregador *</label>
+                            <input type="text" id="profileName" class="form-control form-dark" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="profileChurch" class="form-label text-white fw-bold">Sua Igreja / Ministério</label>
+                            <input type="text" id="profileChurch" class="form-control form-dark">
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="profileAvatarFile" class="form-label text-white fw-bold">Upload da Sua Foto de Perfil (Selecionar Arquivo)</label>
+                            <input type="file" id="profileAvatarFile" accept="image/*" class="form-control form-dark" onchange="previewProfileAvatarFile(event)">
+                            <small class="text-secondary">Escolha uma nova foto de perfil do seu computador.</small>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+                            <button type="button" class="btn btn-outline-danger" onclick="logoutUser(); bootstrap.Modal.getInstance(document.getElementById('profileModal')).hide();">
+                                <i class="bi bi-box-arrow-right me-1"></i> Sair da Conta
+                            </button>
+                            <button type="submit" class="btn btn-gold px-4">
+                                <i class="bi bi-check-lg me-1"></i> Salvar Perfil
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE RECUPERAÇÃO DE SENHA (Esqueci Minha Senha) -->
+    <div class="modal fade" id="resetPassModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark">
+                    <h5 class="modal-title brand-font text-warning"><i class="bi bi-shield-lock-fill me-2"></i> Recuperar Senha</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form onsubmit="event.preventDefault(); handleResetPassword();">
+                        <p class="text-secondary small mb-3">Informe o e-mail cadastrado na sua conta e escolha uma nova senha para redefinir o acesso.</p>
+                        
+                        <div class="mb-3">
+                            <label for="resetEmail" class="form-label text-white fw-bold">Seu E-mail Cadastrado *</label>
+                            <input type="email" id="resetEmail" class="form-control form-dark" placeholder="seuemail@exemplo.com" required>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="resetNewPass" class="form-label text-white fw-bold">Nova Senha *</label>
+                            <input type="password" id="resetNewPass" class="form-control form-dark" placeholder="Digite a nova senha" required>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-outline-light-custom" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-gold px-4">
+                                <i class="bi bi-check-circle-fill me-1"></i> Redefinir Senha
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- App JavaScript Time Com Jesus -->
+    <script src="app.js"></script>
+</body>
+</html>
