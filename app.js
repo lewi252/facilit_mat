@@ -138,7 +138,7 @@ function loadUserSession() {
 }
 
 // 4. Inicialização de Dados (XAMPP MySQL ou LocalStorage)
-async function initDataStore() {
+async function initDataStore(retryCount = 0) {
   if (window.location.protocol === 'file:') {
     appState.isPhpBackendAvailable = false;
     loadVideosFromLocalStorage();
@@ -146,7 +146,14 @@ async function initDataStore() {
   }
 
   try {
-    const response = await fetch(`${API_BASE}/get_videos.php?category=${encodeURIComponent(appState.activeCategory)}&search=${encodeURIComponent(appState.searchQuery)}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(`${API_BASE}/get_videos.php?category=${encodeURIComponent(appState.activeCategory)}&search=${encodeURIComponent(appState.searchQuery)}`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
     if (response.ok) {
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
@@ -160,7 +167,12 @@ async function initDataStore() {
         }
       }
     }
-  } catch (e) {}
+  } catch (e) {
+    if (retryCount < 2) {
+      setTimeout(() => initDataStore(retryCount + 1), 3000);
+      return;
+    }
+  }
 
   appState.isPhpBackendAvailable = false;
   loadVideosFromLocalStorage();
@@ -1150,7 +1162,7 @@ async function handleUserRegister(e) {
     avatarDataUrl = await compressImageFile(regAvatarFileInput.files[0], 300, 300);
   }
 
-  if (appState.isPhpBackendAvailable) {
+  if (window.location.protocol !== 'file:') {
     const formData = new FormData();
     formData.append("name", name);
     formData.append("email", email);
@@ -1167,13 +1179,17 @@ async function handleUserRegister(e) {
       });
       const data = await res.json();
       if (data.success) {
+        appState.isPhpBackendAvailable = true;
         finishUserLogin(data.user);
+        alert("Glória a Deus! Sua conta foi criada e salva com sucesso no banco de dados Neon!");
         return;
       } else {
-        alert("Erro no cadastro: " + data.message);
+        alert("Aviso do Cadastro: " + data.message);
         return;
       }
-    } catch (err) {}
+    } catch (err) {
+      console.warn("Erro ao conectar à API do Render no cadastro:", err);
+    }
   }
 
   const existing = appState.registeredUsers.find(u => u.email.toLowerCase() === email);
@@ -1201,7 +1217,7 @@ async function handleUserLogin(e) {
   const email = document.getElementById("loginEmail").value.trim().toLowerCase();
   const password = document.getElementById("loginPass").value.trim();
 
-  if (appState.isPhpBackendAvailable) {
+  if (window.location.protocol !== 'file:') {
     try {
       const res = await fetch(`${API_BASE}/login.php`, {
         method: "POST",
@@ -1210,20 +1226,23 @@ async function handleUserLogin(e) {
       });
       const data = await res.json();
       if (data.success) {
+        appState.isPhpBackendAvailable = true;
         finishUserLogin(data.user);
         return;
       } else {
-        alert("Erro ao entrar: " + data.message);
+        alert("Aviso de Login: " + data.message);
         return;
       }
-    } catch (err) {}
+    } catch (err) {
+      console.warn("Erro ao conectar ao Render no login:", err);
+    }
   }
 
   const user = appState.registeredUsers.find(u => u.email.toLowerCase() === email && u.password === password);
   if (user) {
     finishUserLogin(user);
   } else {
-    alert("E-mail ou senha incorretos! Se ainda não tem uma conta, clique na aba 'Cadastrar'.");
+    alert("E-mail ou senha incorretos! Se ainda não tem uma conta na nuvem, clique na aba 'Cadastrar'.");
   }
 }
 
