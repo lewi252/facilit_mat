@@ -1,13 +1,15 @@
 <?php
 require_once "config.php";
 
-// Pegar dados (aceita tanto POST quanto JSON)
+header("Content-Type: application/json");
+
+// Pegar dados
 $name = isset($_POST['name']) ? trim($_POST['name']) : '';
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 $password = isset($_POST['password']) ? trim($_POST['password']) : '';
 $church = isset($_POST['church']) ? trim($_POST['church']) : 'Comunidade Cristã';
 
-// Se vier como JSON (raw input)
+// Aceitar JSON também
 if (empty($name) || empty($email)) {
     $rawInput = file_get_contents('php://input');
     $data = json_decode($rawInput, true);
@@ -19,50 +21,44 @@ if (empty($name) || empty($email)) {
     }
 }
 
-// Validar campos obrigatórios
+// Validar
 if (empty($name) || empty($email) || empty($password)) {
     http_response_code(400);
-    echo json_encode(["success" => false, "message" => "Preencha todos os campos obrigatórios (Nome, E-mail e Senha)."]);
-    exit();
+    echo json_encode(["success" => false, "message" => "Preencha todos os campos!"]);
+    exit;
 }
 
 $email = strtolower($email);
 
 try {
-    // Verificar se e-mail já existe
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+    // Verificar se e-mail existe
+    $stmt = $pdo->prepare("SELECT id FROM users WHERE LOWER(email) = LOWER(?)");
     $stmt->execute([$email]);
     if ($stmt->fetch()) {
         http_response_code(409);
-        echo json_encode(["success" => false, "message" => "Este e-mail já está cadastrado. Tente fazer login!"]);
-        exit();
+        echo json_encode(["success" => false, "message" => "E-mail já cadastrado!"]);
+        exit;
     }
 
     // Criptografar senha
     $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-    // ✅ LINHA CORRIGIDA: password_hash em vez de password!
-    $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, church, role, created_at) VALUES (?, ?, ?, ?, 'user', NOW())");
+    // ✅ COLUNAS CORRETAS conforme tabela do Neon!
+    $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, church, created_at) VALUES (?, ?, ?, ?, NOW())");
     $stmt->execute([$name, $email, $password_hash, $church]);
 
     $userId = $pdo->lastInsertId();
 
-    // SUCESSO
     echo json_encode([
         "success" => true,
-        "message" => "Conta criada com sucesso!",
-        "user" => [
-            "id" => $userId,
-            "name" => $name,
-            "email" => $email,
-            "church" => $church
-        ]
+        "message" => "✅ Cadastro REALIZADO com SUCESSO!",
+        "usuario_id" => $userId
     ]);
 
 } catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
         "success" => false,
-        "message" => "Erro ao registrar: " . $e->getMessage()
+        "message" => "❌ ERRO DO BANCO: " . $e->getMessage()
     ]);
 }
